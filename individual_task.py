@@ -3,6 +3,8 @@
 
 import json
 import sys
+from jsonschema import validate
+from jsonschema.exceptions import ValidationError
 
 # Для своего варианта лабораторной работы 2.8 необходимо дополнительно
 # реализовать сохранение и чтение данных из файла формата JSON. Необходимо
@@ -102,8 +104,24 @@ def load_workers(file_name):
     Загрузить всех работников из файла JSON.
     """
     # Открыть файл с заданным именем для чтения.
-    with open(file_name, "r", encoding="utf-8") as fin:
-        return json.load(fin)
+    with open(file_name, "r", encoding="utf-8") as f:
+        document = json.load(f)
+
+    if all(list(map(lambda x: check_validation_json(x), document))):
+        return document
+    else:
+        False
+
+
+def check_validation_json(file_name):
+    with open('worker-schema.json') as f:
+        schema = json.load(f)
+
+    try:
+        validate(instance=file_name, schema=schema)
+        return True
+    except ValidationError:
+        return False
 
 
 def main():
@@ -161,14 +179,18 @@ def main():
             file_name = parts[1]
 
             # Сохранить данные в файл с заданным именем.
-            workers = load_workers(file_name)
+            if load_workers(file_name):
+                workers = load_workers(file_name)
+            else:
+                print("Error Validation JSON")
 
         elif command == "help":
             # Вывести справку о работе с программой.
             print("Список команд:\n")
             print("add - добавить работника;")
             print("list - вывести список работников;")
-            print("select <стаж> - запросить работников со стажем;")
+            print("select <месяц> - запросить работников у которых день"
+                  "рождения совподает с указанным месяцем;")
             print("help - отобразить справку;")
             print("load - загрузить данные из файла;")
             print("save - сохранить данные в файл;")
